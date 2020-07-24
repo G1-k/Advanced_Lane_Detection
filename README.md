@@ -11,15 +11,19 @@
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
+### Final Outcome
+
+Here's a [link to my video result](./project_video_result.mp4) 
+
 
 [//]: # (Image References)
 
 [image1]: ./examples/undistort_output.png "Undistorted"
 [image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./output/binary.png "Binary Example"
-[image4]: ./output/warped_img.png "Warp Example"
-[image5]: ./output/poly.png "Fit Visual"
-[image6]: ./output/final.png "Output"
+[image3]: ./output/binary.PNG "Binary Example"
+[image4]: ./output/warped_img.PNG "Warp Example"
+[image5]: ./output/poly.PNG "Fit Visual"
+[image6]: ./output/final.PNG "Output"
 [video1]: ./project_video_result.mp4 "Video"
 
 
@@ -32,9 +36,6 @@ With the chessboard images provided, I calibrated the camera in the following wa
 
 I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
 
-#### Original Image
-
-![alt text][image1]
 
 #### Undistorted Image
 
@@ -92,8 +93,4 @@ The offset was calclated using left and right lane fit and compute the position 
 
 ---
 
-### Pipeline (video)
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
-
-Here's a [link to my video result](./project_video.mp4)
