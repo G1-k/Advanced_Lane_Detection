@@ -20,7 +20,7 @@
 [image4]: ./output/warped_img.png "Warp Example"
 [image5]: ./output/poly.png "Fit Visual"
 [image6]: ./output/final.png "Output"
-[video1]: ./project_video_output.mp4 "Video"
+[video1]: ./project_video_result.mp4 "Video"
 
 
 ### Camera Calibration
