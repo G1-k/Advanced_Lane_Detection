@@ -2,13 +2,6 @@
 
 ### Goals of this project 
 
-[//]: # (Image References)
-
-[image1]: ./output_images/calibration.png "Calibration Steps"
-[image2]: ./output_images/undistorted.png "Road Transformed"
-[image3]: ./output_images/binary_grad_color.png "Binary Example"
-[image4]: ./output_images/persp_transf_boxes.png "Warp Example"
-
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 * Apply a distortion correction to raw images.
 * Use color transforms, gradients, etc., to create a thresholded binary image.
@@ -19,46 +12,88 @@
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
 
-### Camera Calibration 
+[//]: # (Image References)
+
+[image1]: ./examples/undistort_output.png "Undistorted"
+[image2]: ./test_images/test1.jpg "Road Transformed"
+[image3]: ./output/binary.png "Binary Example"
+[image4]: ./output/warped_img.png "Warp Example"
+[image5]: ./output/poly.png "Fit Visual"
+[image6]: ./output/final.png "Output"
+[video1]: ./project_video_output.mp4 "Video"
+
+
+### Camera Calibration
+
+With the chessboard images provided, I calibrated the camera in the following way to correct the radial and tangential distortions from the camera:
 1. convert to gray scale using `cv2.cvtColor()`
 2. look for chessboard corners using `cv2.findChessboardCorners()`
 3. if the previous step successfully find the corners in the image, then add them to the `imgpoints` data structure
-Once all images have been precessed, the camera calibration and distortion coefficients are computed using `cv2.calibrateCamera()`
 
-### Perspective Transform 
-#### Perspective Transformation
-This section contains the function `perspective_transform()` that computes the perspective transformation to obtain a birds-eye view of the road.
-To perform this transformation are required two set of points:
-* four *source* points on the original image that defines a polygon that contains the two lanes;
-* four *destination* points on the final image that defines the final polygon in which the original one will be mapped.
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
 
-## Pipeline of Code 
+#### Original Image
 
-```python
-# remove distortion from image
-undist_img = undistorted_image(img, mtx, dist)
+![alt text][image1]
 
-# compute combined gradient binary
-combined_grad_img = combine_gradients(undist_img, ksize, mod_thresh, dir_thresh)
+#### Undistorted Image
 
-# compute color binary
-color_img = color_transformation(undist_img, s_thresh)
+![alt text][image2]
 
-# combine the two contributions
-binary_img, stack_img = combine_gradinet_with_color(combined_grad_img, color_img)
 
-# perspective transform
-perspec_img, M, Minv, src_raw, dst_raw = perspective_transform(binary_img)
+### Gradient Computations
 
-# find lane points
-histogram, lane_point_img, left_fitx, right_fitx, ploty = step_find_lane_lines(perspec_img)
+I converted the undistorted image from RGB (Red, Green, Blue) to HLS (Hue, Lightness, Saturation) colorspace. The reason for this is that the saturation channel is less sensitive to light variation than RGB. On the other hand, the lightness channel comes handy when the goal is to detect the white color.
+Once the lanes were filtered, they could now be more easily detected with gradient edge detection methods such as gradient direction and canny edge detection.
 
-# compute curvature
-curvature = measure_curvature_meters(left_fitx, right_fitx, ploty)
+I used a combination of color and gradient thresholds to generate a binary image. Here's an example of my output for this step. 
 
-# compute ego position
-ego_pos = determine_ego_position(img, left_fitx, right_fitx)
+![alt text][image3]
 
-# compose the final image
-fin_img = draw_result(undist_img, perspec_img, lane_point_img, Minv, left_fitx, right_fitx, ploty, curvature, ego_pos, True)
-```
+### Perspective Transform
+
+The next step was to shift the perspective of the road to bird's view and detect the actual lines that compose the lanes. In order to do this, I first applied a polygon mask to focus the line detection to the road.
+I got the perspective transform matrix with the cv2.getPerspectiveTransform function and applied the trasformation with cv2.warpPerspective. In order to get the source points for the transform, I took a straight lines example image, so I would know how the transformed image should look like (two vertical parallel lines).
+
+The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+
+This resulted in the following source and destination points:
+
+| Source        | Destination   | 
+|:-------------:|:-------------:| 
+| 595, 450      | 290, 0        | 
+| 686, 450      | 989, 0        |
+| 1100, 720     | 989, 719      |
+| 208, 720      | 290, 719      |
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+
+![alt text][image4]
+
+#### Poly Fit
+
+For images , I applied a histogram of the lower half of the image to locate the lines' base locations. After this I used windows to capture the points in each line and slided it upwards to capture the next part of the line. If a max numberof points were captured I would recenter the window. With all the captured points for each line, then I fitted a second order polynomial and with it I was now able to calculate the lines' curvature.
+
+For Video purpose , polynomial fit was used becausethere was previous information of a polynomial fit and its points, I would use the corresponding base points as a starting point instead of applying the histogram. Also I would use the best saved coordinate points of the previous polynomial as the windows' locations. In case not enough points were found, then I would apply the histogram at that point and recenter the following windows and slide the windows as done previously.
+
+
+Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+
+![alt text][image5]
+
+#### 5. Radius of Curvature 
+
+The radius of curvature was computed by the lanes curvature starting from the lane coordinates. This function performs also the transformation from pixel reference frame to cartesian reference frame using information on the standard lane length and road width.
+
+The offset was calclated using left and right lane fit and compute the position of the vehicle with respect to the midpoint between the two lanes.
+
+
+![alt text][image6]
+
+---
+
+### Pipeline (video)
+
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+
+Here's a [link to my video result](./project_video.mp4)
